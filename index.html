@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Housie</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f0f2f5;
+            --card-bg: #ffffff;
+            --accent-color: #4CAF50;
+            --accent-dark: #388E3C;
+            --text-color: #333;
+            --border-color: #e0e0e0;
+            --shadow-light: rgba(0, 0, 0, 0.1);
+            --shadow-dark: rgba(0, 0, 0, 0.2);
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: row;
+            gap: 20px;
+            max-width: 1200px;
+            width: 100%;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 15px;
+            box-shadow: 0 4px 20px var(--shadow-light);
+            padding: 30px;
+            flex: 1;
+            min-width: 300px;
+            max-width: 550px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+                align-items: center;
+            }
+            .card {
+                max-width: 100%;
+                min-width: unset;
+                width: 100%;
+            }
+        }
+        
+        h1, h2 {
+            color: var(--accent-dark);
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .current-number {
+            font-size: 3.5em;
+            font-weight: bold;
+            color: var(--accent-color);
+            margin: 20px 0;
+            text-shadow: 1px 1px 2px var(--shadow-light);
+            transition: transform 0.3s ease;
+        }
+
+        .current-number.animate {
+            animation: bounce 0.5s ease-out;
+        }
+
+        @keyframes bounce {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .board-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(40px, 1fr));
+            gap: 5px;
+            width: 100%;
+            margin-top: 20px;
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            padding: 10px;
+            background-color: #f9f9f9;
+        }
+
+        .board-number {
+            background-color: #eee;
+            border: 1px solid #ccc;
+            padding: 10px;
+            border-radius: 5px;
+            font-weight: bold;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .board-number.called {
+            background-color: var(--accent-color);
+            color: white;
+            transform: scale(1.05);
+        }
+
+        .history {
+            width: 100%;
+            min-height: 100px;
+            padding: 15px;
+            margin-top: 20px;
+            border: 2px dashed var(--border-color);
+            border-radius: 10px;
+            text-align: left;
+            overflow-y: auto;
+            max-height: 150px;
+        }
+
+        .history h3 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+            color: var(--accent-dark);
+        }
+
+        .history p {
+            margin: 0;
+            line-height: 1.5;
+            word-wrap: break-word;
+        }
+
+        .ticket-grid {
+            display: grid;
+            grid-template-columns: repeat(9, 1fr);
+            gap: 5px;
+            width: 100%;
+            margin-top: 20px;
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            padding: 10px;
+        }
+
+        .ticket-cell {
+            background-color: #f0f0f0;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-weight: bold;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .ticket-cell:hover {
+            background-color: #e0e0e0;
+        }
+
+        .ticket-cell.marked {
+            background-color: var(--accent-color);
+            color: white;
+            text-decoration: line-through;
+            transform: scale(1.05);
+        }
+
+        .ticket-cell.empty {
+            background-color: transparent;
+            border: 1px solid transparent;
+            pointer-events: none;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 50px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px var(--shadow-light);
+        }
+
+        .btn-primary {
+            background-color: var(--accent-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--accent-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px var(--shadow-dark);
+        }
+
+        .btn-secondary {
+            background-color: #fff;
+            color: var(--accent-color);
+            border: 2px solid var(--accent-color);
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--bg-color);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px var(--shadow-dark);
+        }
+
+        /* Modal styling */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background-color: var(--card-bg);
+            padding: 30px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+            animation: fadeIn 0.3s ease-out;
+            position: relative;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 1.5em;
+            cursor: pointer;
+            color: #999;
+            transition: color 0.2s ease;
+        }
+
+        .close-btn:hover {
+            color: #333;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Rules section styling */
+        .rules-section {
+            width: 100%;
+            max-width: 800px;
+            margin: 20px auto;
+            background-color: var(--card-bg);
+            border-radius: 15px;
+            box-shadow: 0 4px 20px var(--shadow-light);
+            padding: 30px;
+        }
+
+        .rules-section h2 {
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 0;
+            color: var(--accent-dark);
+        }
+        
+        .rules-section h2 .icon {
+            font-size: 1.5em;
+            transition: transform 0.3s ease;
+        }
+
+        .rules-section h2 .icon.rotated {
+            transform: rotate(180deg);
+        }
+
+        .rules-content {
+            display: none;
+            margin-top: 20px;
+            text-align: left;
+            border-top: 1px dashed var(--border-color);
+            padding-top: 20px;
+        }
+
+        .rules-content ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        .rules-content li {
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+            text-align: left;
+            width: 100%;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- Caller and Board Section -->
+        <div class="card caller-card">
+            <h2>Housie Caller Board</h2>
+
+            <div class="current-number-container">
+                <h3>Current Number:</h3>
+                <span id="currentNumberDisplay" class="current-number">--</span>
+            </div>
+
+            <div class="controls">
+                <button id="drawNumberBtn" class="btn btn-primary">Draw Next Number</button>
+                <button id="resetBtn" class="btn btn-secondary">Reset Board</button>
+            </div>
+
+            <div class="history">
+                <h3>Called Numbers History:</h3>
+                <p id="historyDisplay">No numbers called yet.</p>
+            </div>
+
+            <div id="housieBoard" class="board-grid">
+                <!-- Numbers 1 to 90 will be generated here by JavaScript -->
+            </div>
+            <div class="controls" style="margin-top: 20px;">
+                <button id="claimWinBtn" class="btn btn-primary">Claim a Win!</button>
+            </div>
+        </div>
+
+        <!-- Player Ticket Section -->
+        <div class="card ticket-card">
+            <h2>Your Ticket</h2>
+            <div class="controls">
+                <button id="generateTicketBtn" class="btn btn-secondary">Generate New Ticket</button>
+            </div>
+            <div id="playerTicket" class="ticket-grid">
+                <!-- Ticket cells will be generated here -->
+                <p style="grid-column: 1 / -1; text-align: center; color: #999;">Click 'Generate New Ticket' to begin.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rules Section -->
+    <div class="rules-section">
+        <h2 id="rulesHeader">
+            Game Rules
+            <span class="icon">&#9660;</span> <!-- Unicode for a down-arrow -->
+        </h2>
+        <div id="rulesContent" class="rules-content">
+            <p>Housie, also known as Bingo or Tambola, is a game of chance played with numbers from 1 to 90. Here's how to play:</p>
+            <ul>
+                <li><strong>Draw Numbers:</strong> The caller (that's the left side of this screen) draws a random number from 1 to 90.</li>
+                <li><strong>Mark Your Ticket:</strong> If the number called is on your ticket, you can click on it to mark it.</li>
+                <li><strong>Claim a Win:</strong> When you complete a winning pattern, press the **"Claim a Win!"** button.</li>
+                <li><strong>Winning Patterns:</strong> The game checks for the following patterns:
+                    <ul>
+                        <li><strong>Early 5:</strong> The first player to mark any five numbers on their ticket.</li>
+                        <li><strong>Top Line:</strong> All numbers in the first row are marked.</li>
+                        <li><strong>Middle Line:</strong> All numbers in the second row are marked.</li>
+                        <li><strong>Bottom Line:</strong> All numbers in the third row are marked.</li>
+                        <li><strong>Full Housie:</strong> All 15 numbers on your ticket are marked.</li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- The Modal for general messages -->
+    <div id="alertModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <h2 id="modalTitle"></h2>
+            <p id="modalMessage"></p>
+        </div>
+    </div>
+
+    <!-- The "Claim a Win" Modal -->
+    <div id="winModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn win-close">&times;</span>
+            <h2>Claim a Prize!</h2>
+            <form id="winForm">
+                <div class="form-group">
+                    <label for="winnerName">Winner Name:</label>
+                    <input type="text" id="winnerName" required>
+                </div>
+                <div class="form-group">
+                    <label for="winType">Prize Won:</label>
+                    <select id="winType" required>
+                        <option value="">Select a prize...</option>
+                        <option value="Early 5">Early 5</option>
+                        <option value="Top Line">Top Line</option>
+                        <option value="Middle Line">Middle Line</option>
+                        <option value="Bottom Line">Bottom Line</option>
+                        <option value="Full Housie">Full Housie</option>
+                        <option value="Corners">Corners</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary">Submit Win</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- UI Elements ---
+            const drawNumberBtn = document.getElementById('drawNumberBtn');
+            const resetBtn = document.getElementById('resetBtn');
+            const currentNumberDisplay = document.getElementById('currentNumberDisplay');
+            const historyDisplay = document.getElementById('historyDisplay');
+            const housieBoard = document.getElementById('housieBoard');
+            const generateTicketBtn = document.getElementById('generateTicketBtn');
+            const claimWinBtn = document.getElementById('claimWinBtn');
+            const playerTicketGrid = document.getElementById('playerTicket');
+            const modal = document.getElementById('alertModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalMessage = document.getElementById('modalMessage');
+            const closeModalBtn = document.querySelector('.close-btn');
+            const winModal = document.getElementById('winModal');
+            const winCloseBtn = document.querySelector('.win-close');
+            const winForm = document.getElementById('winForm');
+            const rulesHeader = document.getElementById('rulesHeader');
+            const rulesContent = document.getElementById('rulesContent');
+            const rulesIcon = rulesHeader.querySelector('.icon');
+
+            // --- Game State Variables ---
+            let allNumbers = [];
+            let calledNumbers = new Set();
+            let playerTicket = [];
+
+            // --- Game Setup and Initialization ---
+            function initializeGame() {
+                allNumbers = Array.from({ length: 90 }, (_, i) => i + 1);
+                calledNumbers.clear();
+                currentNumberDisplay.textContent = '--';
+                historyDisplay.textContent = 'No numbers called yet.';
+                createBoard();
+                drawNumberBtn.disabled = false;
+                playerTicketGrid.innerHTML = '<p style="grid-column: 1 / -1; text-align: center; color: #999;">Click \'Generate New Ticket\' to begin.</p>';
+                playerTicket = [];
+            }
+
+            function createBoard() {
+                housieBoard.innerHTML = '';
+                for (let i = 1; i <= 90; i++) {
+                    const numDiv = document.createElement('div');
+                    numDiv.classList.add('board-number');
+                    numDiv.id = `num-${i}`;
+                    numDiv.textContent = i;
+                    housieBoard.appendChild(numDiv);
+                }
+            }
+
+            // --- Caller Logic ---
+            function drawNumber() {
+                if (allNumbers.length === 0) {
+                    showMessage('Game Over', 'All numbers have been called!');
+                    drawNumberBtn.disabled = true;
+                    return;
+                }
+
+                const randomIndex = Math.floor(Math.random() * allNumbers.length);
+                const drawnNumber = allNumbers[randomIndex];
+                allNumbers.splice(randomIndex, 1);
+                calledNumbers.add(drawnNumber);
+
+                updateUI(drawnNumber);
+            }
+
+            function updateUI(newNumber) {
+                currentNumberDisplay.textContent = newNumber;
+                currentNumberDisplay.classList.add('animate');
+                setTimeout(() => currentNumberDisplay.classList.remove('animate'), 500);
+
+                const boardCell = document.getElementById(`num-${newNumber}`);
+                if (boardCell) {
+                    boardCell.classList.add('called');
+                }
+
+                const historyArray = Array.from(calledNumbers);
+                historyDisplay.textContent = historyArray.join(', ');
+            }
+
+            // --- Player Ticket Logic ---
+            function generateTicket() {
+                playerTicket = createHousieTicket();
+                renderTicket(playerTicket);
+            }
+
+            function renderTicket(ticket) {
+                playerTicketGrid.innerHTML = '';
+                ticket.flat().forEach(number => {
+                    const cell = document.createElement('div');
+                    cell.classList.add('ticket-cell');
+                    if (number === null) {
+                        cell.classList.add('empty');
+                    } else {
+                        cell.textContent = number;
+                        
+                        // Add click listener for manual marking, regardless of calledNumbers state
+                        cell.addEventListener('click', () => {
+                             cell.classList.toggle('marked');
+                        });
+                    }
+                    playerTicketGrid.appendChild(cell);
+                });
+            }
+
+            /**
+             * A simplified algorithm to create a valid Housie ticket.
+             * Generates a 3x9 ticket with 5 numbers per row.
+             * @returns {Array<Array<number | null>>} A 3x9 ticket array.
+             */
+            function createHousieTicket() {
+                const ticket = Array.from({ length: 3 }, () => Array(9).fill(null));
+                const columnRanges = [[1, 10], [11, 20], [21, 30], [31, 40], [41, 50], [51, 60], [61, 70], [71, 80], [81, 90]];
+                
+                // Get one number from each column initially to ensure each column has at least one number.
+                const columnNumbers = [];
+                for (let i = 0; i < 9; i++) {
+                    const [min, max] = columnRanges[i];
+                    const num = Math.floor(Math.random() * (max - min + 1)) + min;
+                    columnNumbers.push(num);
+                }
+
+                const allNumbers = Array.from({ length: 90 }, (_, i) => i + 1);
+                const remainingNumbers = allNumbers.filter(num => !columnNumbers.includes(num));
+                shuffleArray(remainingNumbers);
+
+                // Add the initial numbers to the ticket
+                for (let i = 0; i < 9; i++) {
+                    const colIndex = i;
+                    const num = columnNumbers[i];
+                    const rowIndex = Math.floor(Math.random() * 3);
+                    ticket[rowIndex][colIndex] = num;
+                }
+                
+                // Fill the rest of the ticket with random numbers
+                let numCount = 9;
+                while (numCount < 15) {
+                    const num = remainingNumbers.pop();
+                    const colIndex = Math.floor((num - 1) / 10);
+                    const rowIndex = Math.floor(Math.random() * 3);
+
+                    if (ticket[rowIndex][colIndex] === null) {
+                        let rowCount = ticket[rowIndex].filter(n => n !== null).length;
+                        let colCount = ticket.filter(row => row[colIndex] !== null).length;
+                        if (rowCount < 5 && colCount < 3) {
+                            ticket[rowIndex][colIndex] = num;
+                            numCount++;
+                        }
+                    }
+                }
+
+                // Sort numbers within each row for a valid ticket display
+                for (let row = 0; row < 3; row++) {
+                    const sortedRow = ticket[row].filter(n => n !== null).sort((a, b) => a - b);
+                    let sortedIndex = 0;
+                    for (let col = 0; col < 9; col++) {
+                        if (ticket[row][col] !== null) {
+                            ticket[row][col] = sortedRow[sortedIndex];
+                            sortedIndex++;
+                        }
+                    }
+                }
+                
+                return ticket;
+            }
+
+            /**
+             * Shuffles an array in place using the Fisher-Yates algorithm.
+             * @param {Array} array - The array to shuffle.
+             */
+            function shuffleArray(array) {
+                for (let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]];
+                }
+            }
+
+            // --- Modal and Event Handlers ---
+            function showMessage(title, message) {
+                modalTitle.textContent = title;
+                modalMessage.textContent = message;
+                modal.style.display = 'flex';
+            }
+
+            function showWinModal() {
+                winModal.style.display = 'flex';
+                winForm.reset();
+            }
+
+            function hideWinModal() {
+                winModal.style.display = 'none';
+            }
+
+            // --- Event Listeners ---
+            drawNumberBtn.addEventListener('click', drawNumber);
+            resetBtn.addEventListener('click', initializeGame);
+            generateTicketBtn.addEventListener('click', generateTicket);
+            claimWinBtn.addEventListener('click', showWinModal);
+
+            closeModalBtn.addEventListener('click', () => { modal.style.display = 'none'; });
+            winCloseBtn.addEventListener('click', hideWinModal);
+            
+            window.addEventListener('click', (event) => {
+                if (event.target === modal) {
+                    modal.style.display = 'none';
+                }
+                if (event.target === winModal) {
+                    hideWinModal();
+                }
+            });
+
+            winForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const winnerName = document.getElementById('winnerName').value;
+                const winType = document.getElementById('winType').value;
+                showMessage("Winner Confirmed!", `${winnerName} has won with a ${winType}!`);
+                hideWinModal();
+            });
+
+            rulesHeader.addEventListener('click', () => {
+                const isHidden = rulesContent.style.display === 'none' || rulesContent.style.display === '';
+                rulesContent.style.display = isHidden ? 'block' : 'none';
+                rulesIcon.classList.toggle('rotated', !isHidden);
+            });
+
+            // Initial setup when the page loads
+            initializeGame();
+        });
+    </script>
+</body>
+</html>
